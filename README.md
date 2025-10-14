@@ -1,1 +1,0 @@
-# go-auth-service
