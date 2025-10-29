@@ -13,7 +13,7 @@ type Dependencies struct {
 	Redis repository.RedisRepository
 }
 
-func SetupDependencies() (*Dependencies, error) {
+func InitDependencies() (*Dependencies, error) {
 	database := db.ConnectDB()
 	db.AutoMigrate(database)
 
