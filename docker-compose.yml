@@ -41,9 +41,7 @@ services:
     ports:
       - "${MINIO_PORT}:9000"
       - "${MINIO_CONSOLE_PORT}:9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    env_file: .env
     volumes:
       - ./minio:/data
     command: server /data --console-address ":9001"
@@ -51,12 +49,13 @@ services:
       - go-auth-network
 
   redis:
-    image: redis:8
+    image: redis:8.2.0
     container_name: go-auth-redis
     ports:
       - "${REDIS_PORT}:6379"
     volumes:
       - ./redis:/data
+    env_file: .env
     command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
     networks:
       - go-auth-network
