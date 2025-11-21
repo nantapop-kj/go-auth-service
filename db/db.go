@@ -12,12 +12,12 @@ import (
 func ConnectDB() *gorm.DB {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=%s",
-		config.Getenv("POSTGRES_HOST", ""),
-		config.Getenv("POSTGRES_USER", ""),
-		config.Getenv("POSTGRES_PASSWORD", ""),
-		config.Getenv("POSTGRES_DB", ""),
-		config.Getenv("POSTGRES_PORT", "5432"),
-		config.Getenv("POSTGRES_TIMEZONE", "Asia/Bangkok"),
+		config.GetEnv("POSTGRES_HOST", ""),
+		config.GetEnv("POSTGRES_USER", ""),
+		config.GetEnv("POSTGRES_PASSWORD", ""),
+		config.GetEnv("POSTGRES_DB", ""),
+		config.GetEnv("POSTGRES_PORT", "5432"),
+		config.GetEnv("POSTGRES_TIMEZONE", "Asia/Bangkok"),
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

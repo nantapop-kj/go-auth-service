@@ -14,12 +14,11 @@ import (
 
 	"github.com/chai2010/webp"
 	"github.com/minio/minio-go/v7"
-	"github.com/nfnt/resize"
 )
 
 type MinioRepository interface {
 	GetFileURL(ctx context.Context, filename string) (string, error)
-	UploadImage(ctx context.Context, filename string, content []byte, maxWidth, maxHeight uint) (string, error)
+	UploadImage(ctx context.Context, filename string, content []byte) (string, error)
 	DeleteFile(ctx context.Context, filename string) error
 }
 
@@ -68,15 +67,11 @@ func (m *MinioRepo) GetFileURL(ctx context.Context, filename string) (string, er
 	return url.String(), nil
 }
 
-func (m *MinioRepo) UploadImage(ctx context.Context, filename string, content []byte, maxWidth, maxHeight uint) (string, error) {
+func (m *MinioRepo) UploadImage(ctx context.Context, filename string, content []byte) (string, error) {
 	img, err := decodeImage(content, filepath.Ext(filename))
 	if err != nil {
 		log.Printf("[MinIO] Failed to decode image %s: %v", filename, err)
 		return "", fmt.Errorf("invalid image format: %w", err)
-	}
-
-	if maxWidth > 0 || maxHeight > 0 {
-		img = resize.Thumbnail(maxWidth, maxHeight, img, resize.Lanczos3)
 	}
 
 	webpData, err := webp.EncodeRGBA(img, 85)
@@ -87,7 +82,7 @@ func (m *MinioRepo) UploadImage(ctx context.Context, filename string, content []
 
 	webpFilename := changeExtension(filename, ".webp")
 
-	res, err := m.Client.PutObject(
+	_, err = m.Client.PutObject(
 		ctx,
 		m.BucketName,
 		webpFilename,
@@ -97,11 +92,16 @@ func (m *MinioRepo) UploadImage(ctx context.Context, filename string, content []
 			ContentType: "image/webp",
 		},
 	)
+
 	if err != nil {
 		log.Printf("[MinIO] Failed to upload file %s: %v", webpFilename, err)
 		return "", err
 	}
-	return res.Key, nil
+
+	// สร้าง URL เช่น https://cdn.example.com/bucket/filename.webp
+	fileURL := fmt.Sprintf("%s/%s/%s", "http://localhost:9000", m.BucketName, webpFilename)
+
+	return fileURL, nil
 }
 
 func (m *MinioRepo) DeleteFile(ctx context.Context, filename string) error {

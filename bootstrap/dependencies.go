@@ -17,7 +17,7 @@ func InitDependencies() (*Dependencies, error) {
 	database := db.ConnectDB()
 	db.AutoMigrate(database)
 
-	bucketName := config.Getenv("MINIO_BUCKET", "")
+	bucketName := config.GetEnv("MINIO_BUCKET", "")
 	minio := config.InitMinio()
 	minioRepo := repository.NewMinioRepo(minio, bucketName)
 

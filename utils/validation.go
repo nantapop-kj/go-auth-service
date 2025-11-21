@@ -8,6 +8,8 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+var Validate = validator.New()
+
 func ValidationErrorToString(err error) string {
 	var ve validator.ValidationErrors
 	if errors.As(err, &ve) {

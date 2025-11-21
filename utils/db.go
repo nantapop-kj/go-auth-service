@@ -1,4 +1,4 @@
-package repository
+package utils
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetDB(tx *gorm.DB, defaultDB *gorm.DB) (*gorm.DB, error) {
+func ResolveDB(tx *gorm.DB, defaultDB *gorm.DB) (*gorm.DB, error) {
 	db := tx
 	if db == nil {
 		db = defaultDB

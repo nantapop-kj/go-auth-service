@@ -11,7 +11,7 @@ import (
 )
 
 func InitRedis() *redis.Client {
-	dbStr := Getenv("REDIS_DB", "0")
+	dbStr := GetEnv("REDIS_DB", "0")
 	db, err := strconv.Atoi(dbStr)
 	if err != nil {
 		fmt.Printf("Invalid REDIS_DB value '%s', using 0\n", dbStr)
@@ -19,8 +19,8 @@ func InitRedis() *redis.Client {
 	}
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     Getenv("REDIS_ADDRESS", ""),
-		Password: Getenv("REDIS_PASSWORD", ""),
+		Addr:     GetEnv("REDIS_ADDRESS", ""),
+		Password: GetEnv("REDIS_PASSWORD", ""),
 		DB:       db,
 		MaintNotificationsConfig: &maintnotifications.Config{
 			Mode: maintnotifications.ModeDisabled,

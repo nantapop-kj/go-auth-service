@@ -8,7 +8,7 @@ import (
 
 func CORSMiddleware() fiber.Handler {
 	return cors.New(cors.Config{
-		AllowOrigins:     config.Getenv("CORS_CLIENT_ORIGINS", ""),
+		AllowOrigins:     config.GetEnv("CORS_CLIENT_ORIGINS", ""),
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowCredentials: true,
