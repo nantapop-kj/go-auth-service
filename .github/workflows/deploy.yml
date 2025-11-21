@@ -1,0 +1,58 @@
+name: Build and Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Set version tag (date + git hash)
+        id: vars
+        run: echo "VERSION=$(date +'%Y%m%d')-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: docker build -t go-auth-service:${{ env.VERSION }} --platform linux/amd64 -f prod.dockerfile .
+
+      - name: Create image tar file
+        run: docker save go-auth-service:${{ env.VERSION }} -o go-auth-service-${{ env.VERSION }}.tar
+
+      - name: Copy image to server
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SERVER_PORT }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "go-auth-service-${{ env.VERSION }}.tar"
+          target: "${{ secrets.SERVER_PART }}/version"
+          tar: false
+
+      - name: Load and run image on server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SERVER_PORT }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd ${{ secrets.SERVER_PART }}
+
+            echo "🧹 Cleaning up old containers and images..."
+            docker ps -a --filter "name=go-auth-service" -q | xargs -r docker stop || true
+            docker ps -a --filter "name=go-auth-service" -q | xargs -r docker rm || true
+            docker images "go-auth-service*" -q | xargs -r docker rmi || true
+
+            echo "📦 Loading new image..."
+            docker load -i version/go-auth-service-${{ env.VERSION }}.tar
+
+            echo "🚀 Starting new container..."
+            docker run --name go-auth-service -it -d -p 3001:3001 --env-file .env go-auth-service:${{ env.VERSION }}
+
+            echo "✅ Deployment complete!"
