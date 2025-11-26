@@ -13,9 +13,10 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v3
 
-      - name: Set version tag (date + git hash)
+      - name: Set version tag (2-digit year + time + git hash)
         id: vars
-        run: echo "VERSION=$(date +'%Y%m%d')-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        run: |
+          echo "VERSION=$(date +'%y%m%d-%H%M')-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Build Docker image
         run: docker build -t go-auth-service:${{ env.VERSION }} --platform linux/amd64 -f prod.dockerfile .
