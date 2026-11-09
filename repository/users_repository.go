@@ -2,50 +2,59 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nantapop-kj/go-auth-service/models"
-	"github.com/nantapop-kj/go-auth-service/utils"
 	"gorm.io/gorm"
 )
 
+var ErrDuplicate = errors.New("duplicate record")
+
 type UsersRepository interface {
-	FindUserByEmail(ctx context.Context, tx *gorm.DB, email string) (bool, error)
-	CreateUser(ctx context.Context, tx *gorm.DB, user *models.Users) (uuid.UUID, error)
+	FindByEmail(ctx context.Context, email string) (*models.Users, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*models.Users, error)
+	Create(ctx context.Context, user *models.Users) error
+	UpdateLastLogin(ctx context.Context, id uuid.UUID, at time.Time) error
 }
 
 type UsersRepositoryImpl struct {
-	DB *gorm.DB
+	db *gorm.DB
 }
 
 func NewUsersRepository(db *gorm.DB) UsersRepository {
-	return &UsersRepositoryImpl{DB: db}
+	return &UsersRepositoryImpl{db: db}
 }
 
-func (r *UsersRepositoryImpl) FindUserByEmail(ctx context.Context, tx *gorm.DB, email string) (bool, error) {
-	db, err := utils.ResolveDB(tx, r.DB)
-	if err != nil {
-		return false, err
-	}
-
-	var count int64
-	if err := db.WithContext(ctx).Model(&models.Users{}).Where("email = ?", email).Count(&count).Error; err != nil {
-		return false, err
-	}
-
-	return count > 0, nil
+func (r *UsersRepositoryImpl) FindByEmail(ctx context.Context, email string) (*models.Users, error) {
+	return r.findOne(ctx, "email = ?", email)
 }
 
-func (r *UsersRepositoryImpl) CreateUser(ctx context.Context, tx *gorm.DB, user *models.Users) (uuid.UUID, error) {
-	db, err := utils.ResolveDB(tx, r.DB)
+func (r *UsersRepositoryImpl) FindByID(ctx context.Context, id uuid.UUID) (*models.Users, error) {
+	return r.findOne(ctx, "id = ?", id)
+}
+
+func (r *UsersRepositoryImpl) Create(ctx context.Context, user *models.Users) error {
+	err := r.db.WithContext(ctx).Create(user).Error
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return ErrDuplicate
+	}
+	return err
+}
+
+func (r *UsersRepositoryImpl) UpdateLastLogin(ctx context.Context, id uuid.UUID, at time.Time) error {
+	return r.db.WithContext(ctx).Model(&models.Users{}).Where("id = ?", id).Update("last_login_at", at).Error
+}
+
+func (r *UsersRepositoryImpl) findOne(ctx context.Context, query string, arg any) (*models.Users, error) {
+	var user models.Users
+	err := r.db.WithContext(ctx).Where(query, arg).First(&user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrNotFound
+	}
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
-
-	if err := db.WithContext(ctx).Create(user).Error; err != nil {
-		return uuid.Nil, fmt.Errorf("failed to create user: %w", err)
-	}
-
-	return user.ID, nil
+	return &user, nil
 }

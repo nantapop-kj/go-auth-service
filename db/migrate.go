@@ -1,27 +1,20 @@
 package db
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/nantapop-kj/go-auth-service/models"
 	"gorm.io/gorm"
 )
 
-func AutoMigrate(db *gorm.DB) {
+func Migrate(db *gorm.DB) error {
 	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`).Error; err != nil {
-		log.Fatalf("❌ Failed to create uuid-ossp extension: %v", err)
+		return fmt.Errorf("create uuid-ossp extension: %w", err)
 	}
 
-	modelsToMigrate := []interface{}{
-		&models.Users{},
-		&models.UsersLoginHistory{},
+	if err := db.AutoMigrate(&models.Users{}, &models.UsersLoginHistory{}); err != nil {
+		return fmt.Errorf("auto migrate: %w", err)
 	}
 
-	for _, model := range modelsToMigrate {
-		if err := db.AutoMigrate(model); err != nil {
-			log.Fatalf("❌ [Database] AutoMigrate failed for model %T: %v", model, err)
-		}
-	}
-
-	log.Println("\033[32m✅ [Database] All migrations completed successfully.\033[0m")
+	return nil
 }

@@ -1,32 +1,54 @@
 package bootstrap
 
 import (
+	"log"
+
 	"github.com/nantapop-kj/go-auth-service/config"
 	"github.com/nantapop-kj/go-auth-service/db"
 	"github.com/nantapop-kj/go-auth-service/repository"
-	"gorm.io/gorm"
+	"github.com/nantapop-kj/go-auth-service/service"
 )
 
 type Dependencies struct {
-	DB    *gorm.DB
-	Minio repository.MinioRepository
-	Redis repository.RedisRepository
+	Config      *config.Config
+	Tokens      *service.TokenService
+	AuthService *service.AuthService
 }
 
 func InitDependencies() (*Dependencies, error) {
-	database := db.ConnectDB()
-	db.AutoMigrate(database)
+	cfg := config.Load()
 
-	bucketName := config.GetEnv("MINIO_BUCKET", "")
-	minio := config.InitMinio()
-	minioRepo := repository.NewMinioRepo(minio, bucketName)
+	secret, err := config.LoadJWTSecret(cfg)
+	if err != nil {
+		return nil, err
+	}
 
-	redis := config.InitRedis()
-	redisRepo := repository.NewRedisRepo(redis)
+	database, err := db.Connect(cfg.Postgres)
+	if err != nil {
+		return nil, err
+	}
+	if err := db.Migrate(database); err != nil {
+		return nil, err
+	}
+	log.Println("postgres connected and migrated")
 
-	return &Dependencies{
-		DB:    database,
-		Redis: redisRepo,
-		Minio: minioRepo,
-	}, nil
+	redisClient, err := config.ConnectRedis(cfg.Redis)
+	if err != nil {
+		return nil, err
+	}
+	log.Println("redis connected")
+
+	redisRepo := repository.NewRedisRepo(redisClient)
+
+	tokens := service.NewTokenService(cfg, secret, redisRepo)
+
+	authService := service.NewAuthService(
+		cfg,
+		repository.NewUsersRepository(database),
+		repository.NewLoginHistoryRepository(database),
+		redisRepo,
+		tokens,
+	)
+
+	return &Dependencies{Config: cfg, Tokens: tokens, AuthService: authService}, nil
 }

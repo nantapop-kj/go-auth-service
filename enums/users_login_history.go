@@ -3,7 +3,9 @@ package enums
 type LoginAction string
 
 const (
-	LoginActionLogin  LoginAction = "login"
-	LoginActionLogout LoginAction = "logout"
-	LoginActionFail   LoginAction = "fail"
+	LoginActionRegister LoginAction = "register"
+	LoginActionLogin    LoginAction = "login"
+	LoginActionLogout   LoginAction = "logout"
+	LoginActionFail     LoginAction = "fail"
+	LoginActionLocked   LoginAction = "locked"
 )

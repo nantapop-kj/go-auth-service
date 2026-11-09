@@ -19,7 +19,7 @@ jobs:
           echo "VERSION=$(date +'%y%m%d-%H%M')-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Build Docker image
-        run: docker build -t go-auth-service:${{ env.VERSION }} --platform linux/amd64 -f prod.dockerfile .
+        run: docker build -t go-auth-service:${{ env.VERSION }} --platform linux/amd64 --target prod .
 
       - name: Create image tar file
         run: docker save go-auth-service:${{ env.VERSION }} -o go-auth-service-${{ env.VERSION }}.tar

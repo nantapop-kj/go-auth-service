@@ -3,13 +3,12 @@ package middleware
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/nantapop-kj/go-auth-service/config"
 )
 
-func CORSMiddleware() fiber.Handler {
+func CORS(origins string) fiber.Handler {
 	return cors.New(cors.Config{
-		AllowOrigins:     config.GetEnv("CORS_CLIENT_ORIGINS", ""),
-		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
+		AllowOrigins:     origins,
+		AllowMethods:     "GET,POST,OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowCredentials: true,
 	})

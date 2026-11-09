@@ -9,11 +9,11 @@ import (
 
 type UsersLoginHistory struct {
 	ID        uuid.UUID         `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	UserID    uuid.UUID         `gorm:"type:uuid;index" json:"user_id"`
-	IPAddress string            `gorm:"type:varchar(50)" json:"ip_address"`
-	UserAgent string            `gorm:"type:varchar(255)" json:"user_agent"`
-	Action    enums.LoginAction `gorm:"type:varchar(20)" json:"action"`
-
+	UserID    *uuid.UUID        `gorm:"type:uuid;index"`
+	Email     string            `gorm:"type:varchar(255);index"`
+	IPAddress string            `gorm:"type:varchar(50)"`
+	UserAgent string            `gorm:"type:varchar(255)"`
+	Action    enums.LoginAction `gorm:"type:varchar(20)"`
 	CreatedAt time.Time
 }
 
